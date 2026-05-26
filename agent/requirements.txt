@@ -1,0 +1,2 @@
+google-cloud-aiplatform[adk,agent-engines]>=1.110.0
+vertexai>=1.43.0

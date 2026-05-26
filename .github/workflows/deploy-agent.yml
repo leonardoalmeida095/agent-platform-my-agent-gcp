@@ -1,0 +1,90 @@
+name: CI/CD - Vertex AI Agent
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'agent/**'
+      - 'scripts/**'
+      - 'infra/**'
+      - '.github/workflows/**'
+  workflow_dispatch: # Permite rodar a esteira manualmente pelo painel do GitHub
+
+env:
+  GOOGLE_CLOUD_PROJECT: "projeto-a-492414"
+  GOOGLE_CLOUD_LOCATION: "us-central1"
+  GOOGLE_CLOUD_BUCKET: "gs://gcs-lab-agent"
+
+jobs:
+  infrastructure:
+    name: Provision Infrastructure (Terraform)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Necessário para o Workload Identity Federation
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          # Estes valores devem ser configurados nos Secrets do seu repositório no GitHub
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ./infra
+        run: terraform init
+
+      - name: Terraform Format Check
+        working-directory: ./infra
+        run: terraform fmt -check
+
+      - name: Terraform Apply
+        working-directory: ./infra
+        run: terraform apply -auto-approve
+
+  deploy-agent:
+    name: Deploy & Test Agent (Python)
+    needs: infrastructure # Garante que o Terraform rode e crie o bucket PRIMEIRO
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: pip install -r agent/requirements.txt
+
+      - name: Deploy to Vertex AI Agent Engine
+        run: python scripts/deploy.py
+        env:
+          GOOGLE_GENAI_USE_VERTEXAI: "True"
+
+      - name: Run E2E Integration Test
+        run: python scripts/integration_test.py
+        env:
+          GOOGLE_GENAI_USE_VERTEXAI: "True"

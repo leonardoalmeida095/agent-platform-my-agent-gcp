@@ -6,10 +6,8 @@ from vertexai import agent_engines
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 agent_dir = os.path.join(parent_dir, 'agent')
-sys.path.append(agent_dir)
-
-# Agora o import deve funcionar
-from root_agent import agent_app
+sys.path.append(parent_dir)
+from agent.root_agent import agent_app
 
 # 1. Captura variáveis de ambiente injetadas pela pipeline de CI/CD
 GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "projeto-a-492414")
@@ -37,7 +35,7 @@ def deploy_agent():
 
     # Configuração do módulo que será enviado
     agent_config = agent_engines.ModuleAgent(
-        module_name="root_agent", # Referência ao nome do arquivo (sem o .py)
+        module_name="agent.root_agent", # Referência ao nome do arquivo (sem o .py)
         agent_name="agent_app",   # Referência ao objeto dentro do código
         register_operations={
           '': ['get_session', 'list_sessions', 'create_session', 'delete_session'],

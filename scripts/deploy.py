@@ -3,6 +3,14 @@ import sys
 import vertexai
 from vertexai import agent_engines
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+agent_dir = os.path.join(parent_dir, 'agent')
+sys.path.append(agent_dir)
+
+# Agora o import deve funcionar
+from root_agent import agent_app
+
 # 1. Captura variáveis de ambiente injetadas pela pipeline de CI/CD
 GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "projeto-a-492414")
 GOOGLE_CLOUD_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
@@ -38,14 +46,17 @@ def deploy_agent():
           'async_stream': ['async_stream_query']
         }
     )
-
+    
+    # Adicionadas as libs que deram falta no log anterior
     requirements = [
         "google-cloud-aiplatform[adk,agent-engines]>=1.110.0",
         "vertexai>=1.43.0",
+        "pydantic>=2.13.4",
+        "cloudpickle>=3.1.2"
     ]
     
-    # Caminho do arquivo a partir da raiz do repositório
-    extra_packages = ["agent/root_agent.py"]
+    # Caminho do diretório como pacote (garante que o __init__.py vá junto)
+    extra_packages = ["agent/"]
     env_vars = {"GOOGLE_GENAI_USE_VERTEXAI": "True"}
 
     try:

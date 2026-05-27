@@ -32,7 +32,8 @@ resource "google_project_service" "gcp_services" {
 
 # 2. Criação do Bucket de Staging
 resource "google_storage_bucket" "staging_bucket" {
-  name          = var.bucket_name
+  # O replace garante que o prefixo "gs://" seja removido caso venha da variável
+  name          = replace(var.bucket_name, "gs://", "")
   location      = var.location
   force_destroy = true # Permite deletar o bucket mesmo se ele contiver artefatos antigos do Agent Engine
 

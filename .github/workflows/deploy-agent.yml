@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
-      id-token: 'write' # Necessário para o Workload Identity Federation
+      id-token: 'write'
 
     steps:
       - name: Checkout Repository
@@ -32,7 +32,6 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          # Estes valores devem ser configurados nos Secrets do seu repositório no GitHub
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
@@ -53,7 +52,7 @@ jobs:
 
   deploy-agent:
     name: Deploy & Test Agent (Python)
-    needs: infrastructure # Garante que o Terraform rode e crie o bucket PRIMEIRO
+    needs: infrastructure
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
